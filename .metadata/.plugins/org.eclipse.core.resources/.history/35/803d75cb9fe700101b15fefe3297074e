@@ -1,0 +1,96 @@
+package com.example.main;
+
+import java.util.List;
+import org.hibernate.*;
+import com.example.entity.Product;
+import com.example.util.HibernateUtil;
+
+public class HQLDemo {
+
+    public static void main(String[] args) {
+
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+
+        // 2️⃣ Insert 5–8 Products
+        session.save(new Product("Laptop", "Electronics", 65000, 10));
+        session.save(new Product("Phone", "Electronics", 30000, 15));
+        session.save(new Product("Headphones", "Accessories", 2500, 30));
+        session.save(new Product("Chair", "Furniture", 4500, 5));
+        session.save(new Product("Table", "Furniture", 7000, 2));
+        session.save(new Product("Pen", "Stationery", 20, 100));
+
+        tx.commit();
+
+        // 3️⃣ Sort by price ASC
+        List<Product> ascPrice = session
+                .createQuery("FROM Product p ORDER BY p.price ASC", Product.class)
+                .list();
+
+        // 3️⃣ Sort by price DESC
+        List<Product> descPrice = session
+                .createQuery("FROM Product p ORDER BY p.price DESC", Product.class)
+                .list();
+
+        // 4️⃣ Sort by quantity (highest first)
+        List<Product> qtySort = session
+                .createQuery("FROM Product p ORDER BY p.quantity DESC", Product.class)
+                .list();
+
+        // 5️⃣ Pagination
+        Query<Product> page1 = session.createQuery("FROM Product", Product.class);
+        page1.setFirstResult(0);
+        page1.setMaxResults(3);
+
+        Query<Product> page2 = session.createQuery("FROM Product", Product.class);
+        page2.setFirstResult(3);
+        page2.setMaxResults(3);
+
+        // 6️⃣ Aggregate Queries
+        Long totalCount = session
+                .createQuery("SELECT COUNT(p) FROM Product p", Long.class)
+                .uniqueResult();
+
+        Long availableCount = session
+                .createQuery("SELECT COUNT(p) FROM Product p WHERE p.quantity > 0", Long.class)
+                .uniqueResult();
+
+        List<Object[]> countByDesc = session
+                .createQuery("SELECT p.description, COUNT(p) FROM Product p GROUP BY p.description")
+                .list();
+
+        Object[] minMaxPrice = session
+                .createQuery("SELECT MIN(p.price), MAX(p.price) FROM Product p", Object[].class)
+                .uniqueResult();
+
+        // 7️⃣ GROUP BY description
+        List<Object[]> groupDesc = session
+                .createQuery("SELECT p.description, p FROM Product p GROUP BY p.description")
+                .list();
+
+        // 8️⃣ Filter by price range
+        List<Product> priceRange = session
+                .createQuery("FROM Product p WHERE p.price BETWEEN 2000 AND 50000", Product.class)
+                .list();
+
+        // 9️⃣ LIKE Queries
+        List<Product> startWith = session
+                .createQuery("FROM Product p WHERE p.name LIKE 'P%'", Product.class)
+                .list();
+
+        List<Product> endWith = session
+                .createQuery("FROM Product p WHERE p.name LIKE '%e'", Product.class)
+                .list();
+
+        List<Product> contains = session
+                .createQuery("FROM Product p WHERE p.name LIKE '%top%'", Product.class)
+                .list();
+
+        List<Product> exactLength = session
+                .createQuery("FROM Product p WHERE LENGTH(p.name) = 3", Product.class)
+                .list();
+
+        session.close();
+        HibernateUtil.getSessionFactory().close();
+    }
+}

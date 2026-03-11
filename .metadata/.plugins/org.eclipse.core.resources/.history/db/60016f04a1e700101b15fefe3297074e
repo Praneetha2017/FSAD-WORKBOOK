@@ -1,0 +1,143 @@
+package com.example.main;
+
+import java.util.List;
+import java.util.Scanner;
+
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.query.Query;
+
+import com.example.entity.Product;
+import com.example.util.HibernateUtil;
+
+public class HQLDemo {
+
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+
+        /* -----------------------------------------
+           MANUAL INSERT (USER INPUT)
+           ----------------------------------------- */
+
+        System.out.print("Enter number of products to insert: ");
+        int n = sc.nextInt();
+        sc.nextLine(); // clear buffer
+
+        for (int i = 1; i <= n; i++) {
+            System.out.println("\nEnter details for Product " + i);
+
+            System.out.print("Name: ");
+            String name = sc.nextLine();
+
+            System.out.print("Description: ");
+            String description = sc.nextLine();
+
+            System.out.print("Price: ");
+            double price = sc.nextDouble();
+
+            System.out.print("Quantity: ");
+            int quantity = sc.nextInt();
+            sc.nextLine(); // clear buffer
+
+            Product p = new Product(name, description, price, quantity);
+            session.save(p);
+        }
+
+        tx.commit();
+
+        /* -----------------------------------------
+           SORTING
+           ----------------------------------------- */
+
+        List<Product> priceAsc = session.createQuery(
+                "FROM Product p ORDER BY p.price ASC",
+                Product.class
+        ).list();
+
+        List<Product> priceDesc = session.createQuery(
+                "FROM Product p ORDER BY p.price DESC",
+                Product.class
+        ).list();
+
+        List<Product> qtyDesc = session.createQuery(
+                "FROM Product p ORDER BY p.quantity DESC",
+                Product.class
+        ).list();
+
+        /* -----------------------------------------
+           PAGINATION
+           ----------------------------------------- */
+
+        Query<Product> firstPage = session.createQuery(
+                "FROM Product", Product.class
+        );
+        firstPage.setFirstResult(0);
+        firstPage.setMaxResults(3);
+
+        Query<Product> secondPage = session.createQuery(
+                "FROM Product", Product.class
+        );
+        secondPage.setFirstResult(3);
+        secondPage.setMaxResults(3);
+
+        /* -----------------------------------------
+           AGGREGATE FUNCTIONS
+           ----------------------------------------- */
+
+        Long totalCount = session.createQuery(
+                "SELECT COUNT(p) FROM Product p",
+                Long.class
+        ).uniqueResult();
+
+        Long availableCount = session.createQuery(
+                "SELECT COUNT(p) FROM Product p WHERE p.quantity > 0",
+                Long.class
+        ).uniqueResult();
+
+        Object[] minMax = session.createQuery(
+                "SELECT MIN(p.price), MAX(p.price) FROM Product p",
+                Object[].class
+        ).uniqueResult();
+
+        List<Object[]> countByDesc = session.createQuery(
+                "SELECT p.description, COUNT(p) FROM Product p GROUP BY p.description",
+                Object[].class
+        ).list();
+
+        /* -----------------------------------------
+           FILTER & LIKE
+           ----------------------------------------- */
+
+        List<Product> priceRange = session.createQuery(
+                "FROM Product p WHERE p.price BETWEEN 2000 AND 50000",
+                Product.class
+        ).list();
+
+        List<Product> startsWithP = session.createQuery(
+                "FROM Product p WHERE p.name LIKE 'P%'",
+                Product.class
+        ).list();
+
+        List<Product> endsWithE = session.createQuery(
+                "FROM Product p WHERE p.name LIKE '%e'",
+                Product.class
+        ).list();
+
+        List<Product> containsTop = session.createQuery(
+                "FROM Product p WHERE p.name LIKE '%top%'",
+                Product.class
+        ).list();
+
+        List<Product> exactLength = session.createQuery(
+                "FROM Product p WHERE LENGTH(p.name) = 3",
+                Product.class
+        ).list();
+
+        session.close();
+        HibernateUtil.getSessionFactory().close();
+        sc.close();
+    }
+}
