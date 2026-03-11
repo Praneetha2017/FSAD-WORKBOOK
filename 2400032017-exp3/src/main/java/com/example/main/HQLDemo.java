@@ -28,7 +28,7 @@ public class HQLDemo {
             System.out.println("4. View Products (Quantity Descending)");
             System.out.println("5. Pagination (First 3 / Next 3)");
             System.out.println("6. Count Products");
-            System.out.println("7. Min & Max Price");
+            System.out.println("7. Min Price & Max Price");
             System.out.println("8. Group By Description");
             System.out.println("9. Price Range (2000 - 50000)");
             System.out.println("10. LIKE Queries");
